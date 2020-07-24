@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script type="text/javascript">
+
+
+        /**
+         * Shared by one or more bones
+         * @param {number} x
+         * @param {number} y
+         */
+        function Joint(x,y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        function Skeleton(rootJoint) {
+            var bones = [];
+            var root = rootJoint;
+            var jointBones = new Map();
+            jointBones.set(root, []);
+
+            var Bone = function(firstJoint, secondJoint) {
+                this.joints = [firstJoint, secondJoint];
+            }
+
+            var findBoneIdx = function (bone) {
+                for (var i = 0; i < bones.length; i++) {
+                    if (bones[i] == bone) return i;
+                }
+                return -1;//not found
+            }
+
+            var findJoint = function (joint) {
+                var idx = -1;
+                var curBone = null;
+                for (var i = 0; i < bones.length && idx < 0; i++) {
+                    curBone = bones[i];
+                    if (curBone.joints[0] == joint) idx = 0;
+                    if (curBone.joints[1] == joint) idx = 1;
+                }
+                if (!curBone) return null;
+                return { bone: curBone, idx: idx };
+            }
+
+            this.addBone = function (newJoint, oldJoint) {
+                var end = newJoint;
+                var start = oldJoint;
+                if (start) {
+                    var found = findJoint(oldJoint);
+                    if (!found && root != start) {
+                        throw "oldjoint is not part of the skeleton";
+                    }
+                } else {
+                    start = root;
+                }
+                var b = new Bone(start, end);
+                jointBones.set(end, []);
+                jointBones.get(end).push(b);
+                jointBones.get(start).push(b);
+                bones.push(b);
+                return b;
+            }
+            var rotateJointAround = function (joint, cx, cy, rad) {
+                //translate
+                var jx = joint.x - cx;
+                var jy = joint.y - cy;
+                var s = Math.sin(rad);
+                var c = Math.cos(rad);
+
+                // rotate point
+                var xnew = jx * c - jy * s;
+                var ynew = jx * s + jy * c;
+
+                // translate point back:
+                joint.x = xnew + cx;
+                joint.y = ynew + cy;
+            }
+
+            var getDownStreamBones = function (startBone, jointIdx) {
+                //jointIdx is the joint the downstream bones are connected from
+                var boneAry = [];
+                var joint = startBone.joints[jointIdx];
+                var connected = jointBones.get(joint);
+                for (var i = 0; i < connected.length; i++) {
+                    var curBone = connected[i];
+                    if (curBone != startBone) {
+                        boneAry.push(curBone);
+                        var idx = -1;//other end of curBone
+                        if (curBone.joints[0] == joint) idx = 1;
+                        if (curBone.joints[1] == joint) idx = 0;
+                        Array.prototype.push.apply(boneAry, getDownStreamBones(curBone, idx));
+                    }
+                }
+                return boneAry;
+            }
+            this.rotateBoneAroundJoint = function (bone, joint, rad) {
+                var idx = -1;
+                if (bone.joints[0] == joint) idx = 0;
+                if (bone.joints[1] == joint) idx = 1;
+                this.rotateBoneAroundEnd(bone, idx, rad);
+            }
+            this.rotateBoneAroundEnd = function (bone, idx, rad) {
+                var boneIdx = findBoneIdx(bone);
+                if (boneIdx < 0) throw "Invalid bone";
+                var joint = bones[boneIdx].joints[idx];
+                var cx = joint.x;
+                var cy = joint.y;
+                var otherSide = idx == 1 ? 0 : 1;
+                var boneAry = getDownStreamBones(bone, otherSide);
+                if (boneAry && boneAry.length > 0) {
+                    for (var i = 0; i < boneAry.length; i++) {
+                        var curBone = boneAry[i];
+                        for (var j = 0; j < 2; j++) {
+                            var curJoint = curBone.joints[j];
+                            rotateJointAround(curJoint, cx, cy, rad);
+                        }
+                    }
+                } else {
+                    rotateJointAround(bone.joints[otherSide], cx, cy, rad);
+                }
+            }
+            this.moveBone = function (vec) {
+
+            }
+
+            this.getNearestJoint = function (x, y) {
+                var distSq = -1;
+                var nearest = null;
+                var cur = 0;
+                for (var i = 0; i < bones.length; i++) {
+                    joint = bones[i].joints[0];
+                    var x1 = joint.x;
+                    var y1 = joint.y;
+                    var xd = x1 - x;
+                    var yd = y1 - y;
+                    cur = xd * xd + yd * yd;
+                    if (distSq == -1 || cur < distSq) {
+                        distSq = cur;
+                        nearest = joint;
+                    }
+                    joint = bones[i].joints[1];
+                    x1 = joint.x;
+                    y1 = joint.y;
+                    xd = x1 - x;
+                    yd = y1 - y;
+                    cur = xd * xd + yd * yd;
+                    if (distSq == -1 || cur < distSq) {
+                        distSq = cur;
+                        nearest = joint;
+                    }
+                }
+                return nearest;
+            }
+
+            this.renderBones = function (canvas) {
+                var cHeight = canvas.height;
+                var ctx = canvas.getContext("2d");
+                ctx.save();
+                ctx.lineStyle = "1px black";
+                for (var i = 0; i < bones.length; i++) {
+                    var bone = bones[i];
+                    ctx.beginPath();
+                    ctx.moveTo(bone.joints[0].x, cHeight - bone.joints[0].y);
+                    ctx.lineTo(bone.joints[1].x, cHeight - bone.joints[1].y);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+        }
+
+        var pelvis = new Joint(100, 100);
+        var skel = new Skeleton(pelvis);
+        var collar = new Joint(pelvis.x, pelvis.y + 50);
+        var spineBone = skel.addBone(collar,pelvis);
+        var leftShoulder = new Joint(collar.x - 20, collar.y);
+        var rightShoulder = new Joint(collar.x + 20, collar.y);
+        skel.addBone(leftShoulder,collar);
+        skel.addBone(rightShoulder, collar);
+        var rightKnee = new Joint(rightShoulder.x,pelvis.y - 45);
+        var leftKnee = new Joint(leftShoulder.x, pelvis.y - 45);
+        var rightThighBone = skel.addBone(rightKnee, pelvis);
+        var leftThighBone = skel.addBone(leftKnee, pelvis);
+        var rightAnkle = new Joint(rightKnee.x, rightKnee.y - 45);
+        var leftAnkle = new Joint(leftKnee.x, leftKnee.y - 45);
+        var rightShinBone = skel.addBone(rightAnkle, rightKnee);
+        var leftShinBone = skel.addBone(leftAnkle, leftKnee);
+        var leftElbow = new Joint(leftShoulder.x - 5, leftShoulder.y - 40);
+        var rightElbow = new Joint(rightShoulder.x - 5, rightShoulder.y - 40);
+        var rightUpperArm = skel.addBone(rightElbow, rightShoulder);
+        var leftupperArm = skel.addBone(leftElbow, leftShoulder);
+        var leftWrist = new Joint(leftElbow.x - 10, leftElbow.y - 40);
+        var rightWrist = new Joint(rightElbow.x - 10, rightElbow.y - 40);
+        var rightForeArm = skel.addBone(rightWrist, rightElbow);
+        var leftForeArm = skel.addBone(leftWrist, leftElbow);
+        var neck = new Joint(collar.x-5, collar.y + 10);
+        var neckBone = skel.addBone(neck, collar);
+        var headTop = new Joint(neck.x +10, neck.y + 30);
+        var skullBone = skel.addBone(headTop,neck);
+
+        window.onload = function () {
+            var canvas = document.getElementById("canvas");
+            skel.renderBones(canvas);
+            var rotate = function () {
+                skel.rotateBoneAroundJoint(leftupperArm, leftShoulder, 0.05);
+                skel.rotateBoneAroundJoint(rightForeArm, rightElbow, 0.05);
+                skel.rotateBoneAroundJoint(leftThighBone, pelvis, 0.05);
+                skel.rotateBoneAroundJoint(leftShinBone, leftKnee, -0.05);
+                canvas.width = canvas.width; //clear
+                skel.renderBones(canvas);
+                setTimeout(rotate, 100);
+            }
+            setTimeout(rotate, 2000);
+        }
+
+    </script>
+</head>
+<body>
+    <canvas id="canvas" height="400" width="400" style="border:1px solid #d3d3d3;"></canvas>
+</body>
+</html>
