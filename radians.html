@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <canvas id="canvas" style="border:1px solid black"></canvas>
+    <script type="text/javascript">
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        canvas.height = canvas.width;//square
+        var w = canvas.width;
+        var h = canvas.height;
+        var radius = 100;
+        var cx = w/2;
+        var cy = h/2;
+        for (var i = 0; i < 100; i+=10) {
+            var angle = (i / 100) * Math.PI * 2;
+            x = Math.cos(angle) * radius;
+            y = Math.sin(angle) * radius;
+            var a1 = Math.round(angle * 100) / 100;
+            var a2 = Math.round(Math.atan2(y, x) * 100) / 100;
+            ctx.fillText(a1 +","+a2, cx + x, cy - y);
+        }
+
+    </script>
+</body>
+</htm

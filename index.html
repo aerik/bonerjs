@@ -3,222 +3,372 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
+    <script src="bonerjs.js"></script>
+    <script src="person.js"></script>
+    <script src="quadruped.js"></script>
+    <style>
+        @keyframes wiggle {
+            0% {
+                transform: translate(-50%, -50%);
+            }
+
+            80% {
+                transform: translate(-50%, -50%);
+            }
+
+            85% {
+                transform: translate(-50%, -45%);
+            }
+
+            95% {
+                transform: translate(-50%, -55%);
+            }
+
+            100% {
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        #startMsg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 2em;
+            font-size: x-large;
+            border-radius: 0.5em;
+            animation: wiggle 2.5s infinite;
+        }
+
+            #startMsg:hover {
+                animation: none;
+            }
+    </style>
     <script type="text/javascript">
 
+        var foreground = new Image();
+        foreground.src = "./imgs/rosegarden_foreground.png";
+        var donald = new Person();
+        donald.skeleton.scale(1.2);
+        var headImg = ImageGraphic.fromUrl("./imgs/Trump3.png");
+        headImg.setSpriteDims(2, 4);
+        donald.head.setGraphic(headImg);
+        var suitBody = ImageGraphic.fromUrl("./imgs/blue002147_suit_red_tie.png");
+        donald.torso.setGraphic(suitBody);
+        var bones = donald.skeleton.getAllBones();
+        for (var i = 0; i < bones.length; i++) {
+            var b = bones[i];
+            var g = b.getGraphic();
+            if (g && g.getType() != "image") {
+                if (b.name.indexOf("Hand") > -1) {
+                    g.updateOptions({ color: "pink" })
+                } else {
+                    g.updateOptions({ color: "#002147" })
+                }
+            }
+        }
+        donald.skeleton.moveTo(100, 270);
 
-        /**
-         * Shared by one or more bones
-         * @param {number} x
-         * @param {number} y
-         */
-        function Joint(x,y) {
-            this.x = x;
-            this.y = y;
+        var melania = new Skeleton(new Joint(100, 0));
+        var melBone = melania.addBone(new Joint(100, 300));
+        melBone.setGraphic(ImageGraphic.fromUrl("./imgs/melania.png"));
+        melania.moveTo(100, 50);
+        melania.rotateBoneTo(melBone, Math.PI * 0.4);
+        //melania.moveTo(180, 150);
+        var melPopup = function (dir) {
+            melania.move(dir/5, dir);
         }
 
-        function Skeleton(rootJoint) {
-            var bones = [];
-            var root = rootJoint;
-            var jointBones = new Map();
-            jointBones.set(root, []);
+        var rona = new Skeleton(new Joint(-100, -100));
+        var ronaBone = rona.addBone(new Joint(-100, -150));
+        ronaBone.setGraphic(ImageGraphic.fromUrl("./imgs/coronavirus3.png"));
 
-            var Bone = function(firstJoint, secondJoint) {
-                this.joints = [firstJoint, secondJoint];
-            }
+        var ratNunes = new Quadruped();
+        ratNunes.torso.setGraphic(ImageGraphic.fromUrl("./imgs/ratbody.png"));
+        ratNunes.torso.joints[0].x += 30;
+        ratNunes.torso.joints[1].y += 30;
+        ratNunes.torso.joints[1].x -= 30;
+        ratNunes.head.joints[1].x -= 100;
+        ratNunes.head.joints[1].y -= 30;
 
-            var findBoneIdx = function (bone) {
-                for (var i = 0; i < bones.length; i++) {
-                    if (bones[i] == bone) return i;
-                }
-                return -1;//not found
-            }
-
-            var findJoint = function (joint) {
-                var idx = -1;
-                var curBone = null;
-                for (var i = 0; i < bones.length && idx < 0; i++) {
-                    curBone = bones[i];
-                    if (curBone.joints[0] == joint) idx = 0;
-                    if (curBone.joints[1] == joint) idx = 1;
-                }
-                if (!curBone) return null;
-                return { bone: curBone, idx: idx };
-            }
-
-            this.addBone = function (newJoint, oldJoint) {
-                var end = newJoint;
-                var start = oldJoint;
-                if (start) {
-                    var found = findJoint(oldJoint);
-                    if (!found && root != start) {
-                        throw "oldjoint is not part of the skeleton";
-                    }
+        ratNunes.skeleton.moveTo(600, 300);
+        bones = ratNunes.skeleton.getAllBones();
+        for (var i = 0; i < bones.length; i++) {
+            var b = bones[i];
+            var g = b.getGraphic();
+            if (g && g.getType() != "image") {
+                if (b.name.indexOf("Hand") > -1 || b.name.indexOf("Foot") > -1) {
+                    g.updateOptions({ color: "pink" })
                 } else {
-                    start = root;
+                    g.updateOptions({ color: "#57595D" })
                 }
-                var b = new Bone(start, end);
-                jointBones.set(end, []);
-                jointBones.get(end).push(b);
-                jointBones.get(start).push(b);
-                bones.push(b);
-                return b;
             }
-            var rotateJointAround = function (joint, cx, cy, rad) {
-                //translate
-                var jx = joint.x - cx;
-                var jy = joint.y - cy;
-                var s = Math.sin(rad);
-                var c = Math.cos(rad);
+        }
+        ratNunes.tail = ratNunes.skeleton.addBone(new Joint(670, 280), ratNunes.torso.joints[0],"tail");
+        ratNunes.tail.setGraphic(new ShapeGraphic("rect", 0.1, { color: "pink" }));
+        var ratFace = ImageGraphic.fromUrl("./imgs/nunes-rat-head.png");
+        ratFace.updateOptions({ xOffset: -0.5 });
+        ratNunes.head.setGraphic(ratFace);
+        ratNunes.pointFeetTo(DIR.RIGHT);
+        ratNunes.skeleton.scale(0.7);
+        ratNunes.skeleton.moveTo(1600, 100);
+        ratNunes.pointFeetTo(DIR.RIGHT);
 
-                // rotate point
-                var xnew = jx * c - jy * s;
-                var ynew = jx * s + jy * c;
-
-                // translate point back:
-                joint.x = xnew + cx;
-                joint.y = ynew + cy;
+        var ratWalk = function () {
+            var pos = ratNunes.torso.joints[0].x;
+            ratNunes.walk(DIR.RIGHT, 5);
+            if (pos > donald.torso.joints[0].x) {
+                ratNunes.skeleton.move(0, 1.2);
             }
+            if (pos > -200) {
+                setTimeout(ratWalk, 30);
+            }
+        }
+        
+        document.onkeyup = function (e) {
+            console.log(e.key);
+            var g = donald.head.getGraphic();
+            var sprite = g.getSpriteIdx();
+            var size = g.getSpriteDims();
+            switch (e.key) {
+                case "ArrowRight":
+                    if (sprite.col < (size.cols - 1)) g.setSpriteIdx(sprite.row, sprite.col + 1);
+                    break;
+                case "ArrowLeft":
+                    if (sprite.col > 0) g.setSpriteIdx(sprite.row, sprite.col - 1);
+                    break;
+                case "ArrowUp":
+                    break;
+                case "ArrowDown":
+                    break;
+            }
+        }
 
-            var getDownStreamBones = function (startBone, jointIdx) {
-                //jointIdx is the joint the downstream bones are connected from
-                var boneAry = [];
-                var joint = startBone.joints[jointIdx];
-                var connected = jointBones.get(joint);
-                for (var i = 0; i < connected.length; i++) {
-                    var curBone = connected[i];
-                    if (curBone != startBone) {
-                        boneAry.push(curBone);
-                        var idx = -1;//other end of curBone
-                        if (curBone.joints[0] == joint) idx = 1;
-                        if (curBone.joints[1] == joint) idx = 0;
-                        Array.prototype.push.apply(boneAry, getDownStreamBones(curBone, idx));
-                    }
+
+
+        function render() {
+            requestAnimationFrame(function () {
+                var canvas = document.getElementById("canvas");
+                canvas.width = canvas.width;//clear
+                //ratNunes.skeleton.renderBones(canvas);
+                ratNunes.skeleton.renderImages(canvas);
+                melania.renderImages(canvas);
+                //donald.skeleton.renderBones(canvas);
+                donald.skeleton.renderImages(canvas);
+                rona.renderImages(canvas);
+                //var ctx = canvas.getContext("2d");
+                //ctx.drawImage(foreground, 0, 0, foreground.width, foreground.height,0,0,canvas.width, canvas.height);
+                setTimeout(render, 50);
+            });
+        }
+        var intro = new Audio();
+        intro.src = "./sounds/hail_to_the_chief_short.mp3";
+        var goingaway = new SoundObject("./sounds/goingAway1.mp3");
+        var speak = function (isOpen) {
+            var cur = headImg.getSpriteIdx();
+            if (isOpen) {
+                headImg.setSpriteIdx(1, cur.col);
+            } else {
+                headImg.setSpriteIdx(0, cur.col);
+            }
+        }
+        goingaway.onVolUp = speak;
+
+        function run() {
+            var msg = document.getElementById("startMsg");
+            if (msg) msg.style.display = "none";
+            intro.onended = function () {
+                //scene change?
+                console.log("Intro over");
+            }
+            intro.play();
+            render();
+            donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * .7);
+            wait(2000).then(function () {
+                //lookaround();
+                donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * 1.4);
+            })
+            donald.pointFeetTo(DIR.LEFT);
+            //var walkFunc = donald.getWalkFunc(DIR.LEFT, 150);
+            var dmove1 = function () {
+                if (donald.torso.joints[0].x < 600) {
+                    //walkFunc();
+                    donald.walk(DIR.LEFT, 5);
+                } else {
+                    //do something here when done walking
+                    donald.stand();
+                    return true;
                 }
-                return boneAry;
+                return false;
             }
-            this.rotateBoneAroundJoint = function (bone, joint, rad) {
-                var idx = -1;
-                if (bone.joints[0] == joint) idx = 0;
-                if (bone.joints[1] == joint) idx = 1;
-                this.rotateBoneAroundEnd(bone, idx, rad);
+            var dmove2 = function () {
+                if (donald.torso.joints[0].x < 900) {
+                    //walkFunc();
+                    donald.walk(DIR.LEFT,3);
+                } else {
+                    //do something here when done walking
+                    donald.stand();
+                    return true;
+                }
+                return false;
             }
-            this.rotateBoneAroundEnd = function (bone, idx, rad) {
-                var boneIdx = findBoneIdx(bone);
-                if (boneIdx < 0) throw "Invalid bone";
-                var joint = bones[boneIdx].joints[idx];
-                var cx = joint.x;
-                var cy = joint.y;
-                var otherSide = idx == 1 ? 0 : 1;
-                var boneAry = getDownStreamBones(bone, otherSide);
-                if (boneAry && boneAry.length > 0) {
-                    for (var i = 0; i < boneAry.length; i++) {
-                        var curBone = boneAry[i];
-                        for (var j = 0; j < 2; j++) {
-                            var curJoint = curBone.joints[j];
-                            rotateJointAround(curJoint, cx, cy, rad);
+            var ronaRoll = function () {
+                var cx = (ronaBone.joints[0].x + ronaBone.joints[1].x) / 2;
+                var cy = (ronaBone.joints[0].y + ronaBone.joints[1].y) / 2;
+                rona.rotateAround(cx, cy, 0.1);
+            }
+            var ronaRock = (function () {
+                var dir = 5;
+                var last = null;
+                return function (init) {
+                    var cur = ronaBone.joints[1].x;
+                    if (last === null || init) last = cur;
+                    if (cur - last > 3) dir = -1;
+                    if (cur - last < -3) dir = 1;
+                    rona.move(dir, 0);
+                }
+            }());
+
+            animateUntil(dmove1).then(
+                function () {
+                    return animateFor(donald.head.getGraphic().flipHoriz, 4, 1000);
+                }
+            ).then(
+                function () {
+                    ratWalk();
+                    return wait(1500);
+                }
+            ).then(
+                function () {
+                    donald.pointFeetTo(DIR.LEFT);
+                    donald.head.getGraphic().setSpriteIdx(0, 1);
+                    return animateUntil(dmove2);
+                }
+            ).then(
+                function () { return wait(1); }
+            ).then(
+                function () {
+                    donald.head.getGraphic().flipHoriz();
+                    return wait(5000);
+                }
+            ).then(
+                function () {
+                    return animateUntil(function () {
+                        melPopup(1);
+                        if (melBone.joints[0].y < 160) return false;
+                        return true;
+                    })
+                }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(0, 0);//smile
+                    return wait(1000);
+                } 
+            ).then(
+                function () {
+                    return animateUntil(function () {
+                        melPopup(-1);
+                        if (melBone.joints[0].y > 0) return false;
+                        return true;
+                    })
+                }
+            ).then(
+                function () {
+                    donald.head.getGraphic().flipHoriz();
+                    donald.head.getGraphic().setSpriteIdx(0, 3);
+                    var dx = canvas.width - ronaBone.joints[0].x;
+                    var dy = 200 - ronaBone.joints[0].y;
+                    rona.move(dx, dy);
+                    return animateFor(function () {
+                        ronaRoll();
+                        rona.move(-1.5, 0);
+                    }, 200);
+                }
+            ).then(
+                function () {
+                    return animateFor(donald.head.getGraphic().flipHoriz, 2, 1000);
+                }
+            ).then(
+                function () {
+                    return wait(1500);
+                }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(0, 1);
+                }
+            ).then(
+                function () {
+                    return goingaway.play();
+                }
+            ).then(
+                function () {
+                    var pos = Math.round(ronaBone.joints[0].x);
+                    ronaRock(true);
+                    return (animateFor(ronaRock, 60, 10).then(
+                        function () {
+                            return animateUntil(function () {
+                                if (Math.round(ronaBone.joints[0].x) != pos) {
+                                    ronaRock();
+                                    return false;
+                                }
+                                rona.scale(1.5);
+                                return true;
+                            }, 10);
                         }
-                    }
-                } else {
-                    rotateJointAround(bone.joints[otherSide], cx, cy, rad);
+                    ));
                 }
-            }
-            this.moveBone = function (vec) {
-
-            }
-
-            this.getNearestJoint = function (x, y) {
-                var distSq = -1;
-                var nearest = null;
-                var cur = 0;
-                for (var i = 0; i < bones.length; i++) {
-                    joint = bones[i].joints[0];
-                    var x1 = joint.x;
-                    var y1 = joint.y;
-                    var xd = x1 - x;
-                    var yd = y1 - y;
-                    cur = xd * xd + yd * yd;
-                    if (distSq == -1 || cur < distSq) {
-                        distSq = cur;
-                        nearest = joint;
-                    }
-                    joint = bones[i].joints[1];
-                    x1 = joint.x;
-                    y1 = joint.y;
-                    xd = x1 - x;
-                    yd = y1 - y;
-                    cur = xd * xd + yd * yd;
-                    if (distSq == -1 || cur < distSq) {
-                        distSq = cur;
-                        nearest = joint;
-                    }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(1, 3);
                 }
-                return nearest;
-            }
-
-            this.renderBones = function (canvas) {
-                var cHeight = canvas.height;
-                var ctx = canvas.getContext("2d");
-                ctx.save();
-                ctx.lineStyle = "1px black";
-                for (var i = 0; i < bones.length; i++) {
-                    var bone = bones[i];
-                    ctx.beginPath();
-                    ctx.moveTo(bone.joints[0].x, cHeight - bone.joints[0].y);
-                    ctx.lineTo(bone.joints[1].x, cHeight - bone.joints[1].y);
-                    ctx.stroke();
+            ).then(
+                function () {
+                    return wait(1000);
                 }
-                ctx.restore();
-            }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(0, 2);
+                }
+            ).then(
+                function () {
+                    return wait(1000);
+                }
+            ).then(
+                function () {
+                    return goingaway.play();
+                }
+            ).then(
+                function () {
+                    var pos = Math.round(ronaBone.joints[0].x);
+                    ronaRock(true);
+                    return (animateFor(ronaRock, 60, 10).then(
+                        function () {
+                            return animateUntil(function () {
+                                if (Math.round(ronaBone.joints[0].x) != pos) {
+                                    ronaRock();
+                                    return false;
+                                }
+                                rona.scale(1.5);
+                                return true;
+                            }, 10);
+                        }
+                    ));
+                }
+            )
 
-        }
-
-        var pelvis = new Joint(100, 100);
-        var skel = new Skeleton(pelvis);
-        var collar = new Joint(pelvis.x, pelvis.y + 50);
-        var spineBone = skel.addBone(collar,pelvis);
-        var leftShoulder = new Joint(collar.x - 20, collar.y);
-        var rightShoulder = new Joint(collar.x + 20, collar.y);
-        skel.addBone(leftShoulder,collar);
-        skel.addBone(rightShoulder, collar);
-        var rightKnee = new Joint(rightShoulder.x,pelvis.y - 45);
-        var leftKnee = new Joint(leftShoulder.x, pelvis.y - 45);
-        var rightThighBone = skel.addBone(rightKnee, pelvis);
-        var leftThighBone = skel.addBone(leftKnee, pelvis);
-        var rightAnkle = new Joint(rightKnee.x, rightKnee.y - 45);
-        var leftAnkle = new Joint(leftKnee.x, leftKnee.y - 45);
-        var rightShinBone = skel.addBone(rightAnkle, rightKnee);
-        var leftShinBone = skel.addBone(leftAnkle, leftKnee);
-        var leftElbow = new Joint(leftShoulder.x - 5, leftShoulder.y - 40);
-        var rightElbow = new Joint(rightShoulder.x - 5, rightShoulder.y - 40);
-        var rightUpperArm = skel.addBone(rightElbow, rightShoulder);
-        var leftupperArm = skel.addBone(leftElbow, leftShoulder);
-        var leftWrist = new Joint(leftElbow.x - 10, leftElbow.y - 40);
-        var rightWrist = new Joint(rightElbow.x - 10, rightElbow.y - 40);
-        var rightForeArm = skel.addBone(rightWrist, rightElbow);
-        var leftForeArm = skel.addBone(leftWrist, leftElbow);
-        var neck = new Joint(collar.x-5, collar.y + 10);
-        var neckBone = skel.addBone(neck, collar);
-        var headTop = new Joint(neck.x +10, neck.y + 30);
-        var skullBone = skel.addBone(headTop,neck);
-
-        window.onload = function () {
-            var canvas = document.getElementById("canvas");
-            skel.renderBones(canvas);
-            var rotate = function () {
-                skel.rotateBoneAroundJoint(leftupperArm, leftShoulder, 0.05);
-                skel.rotateBoneAroundJoint(rightForeArm, rightElbow, 0.05);
-                skel.rotateBoneAroundJoint(leftThighBone, pelvis, 0.05);
-                skel.rotateBoneAroundJoint(leftShinBone, leftKnee, -0.05);
-                canvas.width = canvas.width; //clear
-                skel.renderBones(canvas);
-                setTimeout(rotate, 100);
-            }
-            setTimeout(rotate, 2000);
+            //animateFor(walkFunc, 100).then(function () {
+            //    var p2 = animateFor(donald.head.getGraphic().flipHoriz, 4, 1000);
+            //    return p2;
+            //});
         }
 
     </script>
 </head>
 <body>
-    <canvas id="canvas" height="400" width="400" style="border:1px solid #d3d3d3;"></canvas>
+    <div style="height: 800px; width: 1400px; background-image:url(imgs/rosegarden3.png);background-size: cover;">
+        <canvas id="canvas" height="800" width="1400" style="position: absolute; border:1px solid #d3d3d3; background-color:transparent; "></canvas>
+        <div style="height: 800px; width: 1400px; position:absolute; background-image:url(imgs/rosegarden_foreground.png);background-size: cover; background-color:transparent"></div>
+    </div>
+    <button id="startMsg" type="button" onclick="run()" >CLICK HERE</button>
 </body>
 </html>

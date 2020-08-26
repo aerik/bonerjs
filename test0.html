@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="bonerjs.js"></script>
+    <script type="text/javascript">
+
+        var size1 = {
+            width: 60,
+            head: 60,
+            arms: 70,
+            legs: 70,
+            feet: 20
+        }
+        var pelvis = new Joint(100, 100);
+        var skel = new Skeleton(pelvis);
+        var collar = new Joint(pelvis.x, pelvis.y + 60);
+        var spineBone = skel.addBone(collar, pelvis);
+        spineBone.setGraphic(new ShapeGraphic("rect",0.65));
+        var leftShoulder = new Joint(collar.x - size1.width/2, collar.y);
+        var rightShoulder = new Joint(collar.x + size1.width/2, collar.y);
+        skel.addBone(leftShoulder, collar).setGraphic(new ShapeGraphic("rect", 0.3));
+        skel.addBone(rightShoulder, collar).setGraphic(new ShapeGraphic("rect", 0.3));
+        var leftWrist = new Joint(leftShoulder.x, leftShoulder.y - size1.arms);
+        var leftArmBone = skel.addBone(leftWrist, leftShoulder);
+        leftArmBone.setGraphic(new ShapeGraphic("rect", 0.1));
+        var rightWrist = new Joint(rightShoulder.x, rightShoulder.y - size1.arms);
+        var rightArmBone = skel.addBone(rightWrist, rightShoulder);
+        rightArmBone.setGraphic(new ShapeGraphic("rect", 0.1));
+        var leftAnkle = new Joint(pelvis.x, pelvis.y - size1.legs);
+        var rightAnkle = new Joint(pelvis.x, pelvis.y - size1.legs);
+        var leftLegBone = skel.addBone(leftAnkle, pelvis);
+        leftLegBone.setGraphic(new ShapeGraphic("rect", 0.2));
+        var rightLegBone = skel.addBone(rightAnkle, pelvis);
+        rightLegBone.setGraphic(new ShapeGraphic("rect", 0.2));
+        var leftToe = new Joint(leftAnkle.x + size1.feet, leftAnkle.y);
+        var leftFootBone = skel.addBone(leftToe, leftAnkle);
+        leftFootBone.setGraphic(new ShapeGraphic("rect", 0.3));
+        var rightToe = new Joint(rightAnkle.x + size1.feet, rightAnkle.y);
+        var rightFootBone = skel.addBone(rightToe, rightAnkle);
+        rightFootBone.setGraphic(new ShapeGraphic("rect", 0.3));
+        var headTop = new Joint(collar.x, collar.y + size1.head);
+        var skullBone = skel.addBone(headTop, collar);
+        var headImg = ImageGraphic.fromUrl("./imgs/TrumpFaceSmiling.png");
+        headImg.setSpriteDims(2, 1);
+        skullBone.setGraphic(headImg);
+
+        var walk = (function () {
+            var stepDir = 1;
+            var startingleftLegAngle = leftLegBone.getAngle()-0.2;
+            return function () {
+                skel.rotateBoneAroundJoint(rightLegBone, pelvis, 0.05 * -stepDir);
+                skel.rotateBoneAroundJoint(leftLegBone, pelvis, 0.05 * stepDir);
+                skel.rotateBoneAroundJoint(skullBone, collar, 0.02 * stepDir);
+                var leftLegAngle = leftLegBone.getAngle();
+
+                if (leftLegAngle < startingleftLegAngle) stepDir *= -1;
+                if (leftLegAngle > -(Math.PI + startingleftLegAngle)) stepDir *= -1;
+                headImg.setSpriteIdx(0, 0);
+                if (stepDir < 0) headImg.setSpriteIdx(1, 0);
+            }
+        }());
+
+        function render() {
+            var canvas = document.getElementById("canvas");
+            canvas.width = canvas.width;//clear
+            skel.renderBones(canvas);
+            skel.renderImages(canvas);
+        }
+
+        var walkTest = function () {
+            walk();
+            render();
+            setTimeout(walkTest, 100);
+        }
+
+        window.onload = function () {
+            walkTest();
+
+        }
+
+    </script>
+</head>
+<body>
+    <canvas id="canvas" height="400" width="400" style="border:1px solid #d3d3d3;"></canvas>
+</body>
+</html>

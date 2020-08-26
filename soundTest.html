@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <script type="text/javascript">
+
+        function SoundObject(srcUrl) {
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContext();
+            var audioBuffer = null;
+            var source = null;
+            var bufferSize = 4096;
+            var lastSampleVol = 0;
+            fetch(srcUrl)
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                .then(function (buf) {
+                    audioBuffer = buf;
+                });
+            this.getBuffer = function () {
+                return audioBuffer;
+            }
+            this.onVolUp = function (isUp) {
+
+            }
+
+            var node = audioContext.createScriptProcessor(bufferSize, 1, 1);
+            var that = this;
+            node.onaudioprocess = function (e) {
+                var buflen = e.inputBuffer.length;
+                var input = e.inputBuffer.getChannelData(0);
+                var output = e.outputBuffer.getChannelData(0);
+                var max = 0;
+                var cur = 0;
+                for (var i = 0; i < buflen; i++) {
+                    output[i] = input[i];
+                    cur = Math.abs(input[i]);
+                    if (cur > max) max = cur;
+                }
+                that.onVolUp(max > lastSampleVol);
+                lastSampleVol = max;
+            }
+
+            this.play = function () {
+                lastSampleVol = 0;
+                if (source) source.stop();
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(node);
+                node.connect(audioContext.destination);
+                source.onended = function (e) {
+                    console.warn("Ended playback");
+                    node.disconnect();
+                    source.disconnect();
+                }
+                source.start();
+            }
+        }
+
+        var sound1 = new SoundObject("./sounds/goingAway1.mp3");
+        var speak = function (isOpen) {
+            var mouth = document.getElementById("mouth");
+            if (isOpen) {
+                mouth.style.height = "50px";
+            } else {
+                mouth.style.height = "10px";
+            }
+        }
+        sound1.onVolUp = speak;
+
+        function playTest() {
+           
+            sound1.play();
+        }
+    </script>
+    <button type="button" onclick="playTest()">play</button>
+    <br />
+    <br />
+    <div id="mouth" style="border: 1px solid blue; width: 100px; height: 10px"></div>
+</body>
+</html>

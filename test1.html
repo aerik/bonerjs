@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="bonerjs.js"></script>
+    <script type="text/javascript">       
+
+        var pelvis = new Joint(100, 100);
+        var skel = new Skeleton(pelvis);
+        var collar = new Joint(pelvis.x, pelvis.y + 50);
+        var spineBone = skel.addBone(collar,pelvis);
+        var leftShoulder = new Joint(collar.x - 20, collar.y);
+        var rightShoulder = new Joint(collar.x + 20, collar.y);
+        skel.addBone(leftShoulder,collar);
+        skel.addBone(rightShoulder, collar);
+        var rightKnee = new Joint(rightShoulder.x,pelvis.y - 45);
+        var leftKnee = new Joint(leftShoulder.x, pelvis.y - 45);
+        var rightThighBone = skel.addBone(rightKnee, pelvis);
+        var leftThighBone = skel.addBone(leftKnee, pelvis);
+        var rightAnkle = new Joint(rightKnee.x, rightKnee.y - 45);
+        var leftAnkle = new Joint(leftKnee.x, leftKnee.y - 45);
+        var rightShinBone = skel.addBone(rightAnkle, rightKnee);
+        var leftShinBone = skel.addBone(leftAnkle, leftKnee);
+        var leftElbow = new Joint(leftShoulder.x - 5, leftShoulder.y - 40);
+        var rightElbow = new Joint(rightShoulder.x - 5, rightShoulder.y - 40);
+        var rightUpperArm = skel.addBone(rightElbow, rightShoulder);
+        var leftupperArm = skel.addBone(leftElbow, leftShoulder);
+        var leftWrist = new Joint(leftElbow.x - 10, leftElbow.y - 40);
+        var rightWrist = new Joint(rightElbow.x - 10, rightElbow.y - 40);
+        var rightForeArm = skel.addBone(rightWrist, rightElbow);
+        var leftForeArm = skel.addBone(leftWrist, leftElbow);
+        var neck = new Joint(collar.x-5, collar.y + 10);
+        var neckBone = skel.addBone(neck, collar);
+        var headTop = new Joint(neck.x +10, neck.y + 30);
+        var skullBone = skel.addBone(headTop,neck);
+
+        window.onload = function () {
+            var canvas = document.getElementById("canvas");
+            skel.renderBones(canvas);
+            //var rotate = function () {
+            //    skel.rotateBoneAroundJoint(leftupperArm, leftShoulder, 0.05);
+            //    skel.rotateBoneAroundJoint(rightForeArm, rightElbow, 0.05);
+            //    skel.rotateBoneAroundJoint(leftThighBone, pelvis, 0.05);
+            //    skel.rotateBoneAroundJoint(leftShinBone, leftKnee, -0.05);
+            //    canvas.width = canvas.width; //clear
+            //    skel.renderBones(canvas);
+            //    setTimeout(rotate, 100);
+            //}
+            //setTimeout(rotate, 2000);
+            var move1 = function () {
+                skel.rotateBoneAroundJoint(leftupperArm, leftShoulder, 0.02);
+                skel.rotateBoneAroundJoint(rightForeArm, rightElbow, 0.02);
+                skel.rotateBoneAroundJoint(leftThighBone, pelvis, 0.02);
+                skel.rotateBoneAroundJoint(leftShinBone, leftKnee, -0.02);
+                canvas.width = canvas.width; //clear
+                skel.renderBones(canvas);
+            }
+            var move2 = function () {
+                skel.rotateBoneAroundJoint(leftupperArm, leftShoulder, -0.02);
+                skel.rotateBoneAroundJoint(rightForeArm, rightElbow, -0.02);
+                skel.rotateBoneAroundJoint(leftThighBone, pelvis, -0.02);
+                skel.rotateBoneAroundJoint(leftShinBone, leftKnee, 0.02);
+                canvas.width = canvas.width; //clear
+                skel.renderBones(canvas);
+            }
+
+            var firstMove = function () { return skel.animate(move1, 100, 10000) };
+            var secondMove = function () { return skel.animate(move2, 100, 10000) };
+            firstMove().then(secondMove).then(function () { console.log("Done") });
+        }
+
+    </script>
+</head>
+<body>
+    <canvas id="canvas" height="400" width="400" style="border:1px solid #d3d3d3;"></canvas>
+</body>
+</html>
