@@ -36,9 +36,13 @@ function Person() {
     this.leftShoulder = skel.addBone(leftScapula, collar);
     this.rightShoulder = skel.addBone(rightScapula, collar);
     this.leftArm = skel.addBone(leftWrist, leftScapula);
+    this.leftArm.drawingLayer = 1;
     this.rightArm = skel.addBone(rightWrist, rightScapula);
+    this.rightArm.drawingLayer = 1;
     this.leftHand = skel.addBone(leftKnuckle, leftWrist);
+    this.leftHand.drawingLayer = 2;
     this.rightHand = skel.addBone(rightKnuckle, rightWrist);
+    this.rightHand.drawingLayer = 2;
     this.leftHipBone = skel.addBone(leftHip, pelvis);
     this.rightHipBone = skel.addBone(rightHip, pelvis);
     this.leftLeg = skel.addBone(leftAnkle, leftHip);
@@ -122,34 +126,4 @@ Person.prototype.walk = function (walkDir, speed) {
     skel.move(stepDist, 0)
 }
 
-//Person.prototype.getWalkFunc = function (walkDir, speed) { //px/second
-//    var direction = 1;//left
-//    if (walkDir == DIR.RIGHT) {
-//        direction = -1;
-//    } else if(walkDir != DIR.LEFT){
-//        throw "Cannot walk in that direction";
-//    }
-//    var skel = this.skeleton;
-//    var leftLegBone = this.leftLeg;
-//    var rightLegBone = this.rightLeg;
-//    var leftHip = leftLegBone.joints[0];
-//    var rightHip = rightLegBone.joints[0];
-//    var leftLegDir = direction;
-//    var legUpAngle = -Math.PI / 3;
-//    var travelRadians = 2 * legUpAngle;
-//    var lastRun = new Date();
-//    return function () {
-//        var now = new Date();
-//        var elapsed = now - lastRun +1;//cannot be zero
-//        lastRun = now;
-//        var stepDist = speed * direction / elapsed;
-//        var rotRad = elapsed * travelRadians / -1000;
-//        skel.rotateBoneAroundJoint(leftLegBone, leftHip, rotRad * leftLegDir);
-//        skel.rotateBoneAroundJoint(rightLegBone, rightHip, rotRad * -leftLegDir);
-//        var leftLegAngle = leftLegBone.getAngle();
-//        if (leftLegDir == -1 && leftLegAngle < travelRadians) leftLegDir = 1;
-//        if (leftLegDir == 1 && leftLegAngle > legUpAngle) leftLegDir = -1;
-//        skel.move(stepDist,0)
-//    }
-//}
 

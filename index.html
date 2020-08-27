@@ -60,10 +60,13 @@
             var b = bones[i];
             var g = b.getGraphic();
             if (g && g.getType() != "image") {
+                g.updateOptions({ color: "#002147" })
                 if (b.name.indexOf("Hand") > -1) {
                     g.updateOptions({ color: "pink" })
                 } else {
-                    g.updateOptions({ color: "#002147" })
+                    if (b.name.indexOf("Foot") > -1) {
+                        g.updateOptions({ color: "black" })
+                    }
                 }
             }
         }
@@ -82,6 +85,13 @@
         var rona = new Skeleton(new Joint(-100, -100));
         var ronaBone = rona.addBone(new Joint(-100, -150));
         ronaBone.setGraphic(ImageGraphic.fromUrl("./imgs/coronavirus3.png"));
+        var ronaGrow = function (scale) {
+            var oldSize = rona.getBounds();
+            rona.scale(scale);
+            var newSize = rona.getBounds();
+            var dy = oldSize.min.y - newSize.min.y;
+            rona.move(0, dy);
+        }
 
         var ratNunes = new Quadruped();
         ratNunes.torso.setGraphic(ImageGraphic.fromUrl("./imgs/ratbody.png"));
@@ -204,7 +214,7 @@
             var dmove2 = function () {
                 if (donald.torso.joints[0].x < 900) {
                     //walkFunc();
-                    donald.walk(DIR.LEFT,3);
+                    donald.walk(DIR.LEFT, 3);
                 } else {
                     //do something here when done walking
                     donald.stand();
@@ -263,12 +273,12 @@
                 function () {
                     donald.head.getGraphic().setSpriteIdx(0, 0);//smile
                     return wait(1000);
-                } 
+                }
             ).then(
                 function () {
                     return animateUntil(function () {
                         melPopup(-1);
-                        if (melBone.joints[0].y > 0) return false;
+                        if (melBone.joints[0].y > 50) return false;
                         return true;
                     })
                 }
@@ -311,7 +321,7 @@
                                     ronaRock();
                                     return false;
                                 }
-                                rona.scale(1.5);
+                                ronaGrow(1.5);
                                 return true;
                             }, 10);
                         }
@@ -348,27 +358,76 @@
                                     ronaRock();
                                     return false;
                                 }
-                                rona.scale(1.5);
+                                ronaGrow(1.5);
                                 return true;
                             }, 10);
                         }
                     ));
                 }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(1, 3);
+                    donald.pointFeetTo(DIR.LEFT);
+                    donald.skeleton.rotateBoneTo(donald.leftArm, -Math.PI * 0.4);
+                    donald.skeleton.rotateBoneTo(donald.rightArm, -Math.PI * 0.3);
+                    return animateFor(function () { //back up
+                        donald.walk(DIR.RIGHT, 10)
+                    }, 10, 20);
+                }
+            ).then(
+                function () {
+                    donald.skeleton.rotateBoneTo(donald.leftArm, -Math.PI * 0.5);
+                    donald.skeleton.rotateBoneTo(donald.rightArm, -Math.PI * 0.5);
+                    donald.skeleton.rotateBoneTo(donald.leftLeg, -Math.PI * 0.5);
+                    donald.skeleton.rotateBoneTo(donald.rightLeg, -Math.PI * 0.5);
+                    return wait(200);
+                }
+            ).then(
+                function () {
+                    donald.head.getGraphic().setSpriteIdx(0, 3);
+                    return wait(500);
+                }
+            ).then(
+                function () {
+                    return animateFor(donald.head.getGraphic().flipHoriz, 2, 1000);
+                }
+            ).then(
+                function () {
+                    return goingaway.play();
+                }
+            ).then(
+                function () {
+                    var pos = Math.round(ronaBone.joints[0].x);
+                    ronaRock(true);
+                    return (animateFor(ronaRock, 60, 10).then(
+                        function () {
+                            return animateUntil(function () {
+                                if (Math.round(ronaBone.joints[0].x) != pos) {
+                                    ronaRock();
+                                    return false;
+                                }
+                                ronaGrow(1.5);
+                                return true;
+                            }, 10);
+                        }
+                    ));
+                }
+            ).then(
+                function () {
+                    return animateFor(function () {
+                        ronaGrow(1.5);
+                    }, 5, 50);
+                }
             )
-
-            //animateFor(walkFunc, 100).then(function () {
-            //    var p2 = animateFor(donald.head.getGraphic().flipHoriz, 4, 1000);
-            //    return p2;
-            //});
         }
 
     </script>
 </head>
 <body>
-    <div style="height: 800px; width: 1400px; background-image:url(imgs/rosegarden3.png);background-size: cover;">
+    <div style="height: 800px; width: 1400px; background-image:url(imgs/rosegarden3.png);background-size: cover; position:relative;">
         <canvas id="canvas" height="800" width="1400" style="position: absolute; border:1px solid #d3d3d3; background-color:transparent; "></canvas>
         <div style="height: 800px; width: 1400px; position:absolute; background-image:url(imgs/rosegarden_foreground.png);background-size: cover; background-color:transparent"></div>
+        <button id="startMsg" type="button" onclick="run()">CLICK HERE</button>
     </div>
-    <button id="startMsg" type="button" onclick="run()" >CLICK HERE</button>
 </body>
 </html>
