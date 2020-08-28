@@ -28,12 +28,13 @@
                 transform: translate(-50%, -50%);
             }
         }
-
-        #startMsg {
+        .center {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+        }
+        #startMsg {
             padding: 2em;
             font-size: x-large;
             border-radius: 0.5em;
@@ -153,52 +154,56 @@
                     break;
             }
         }
-
+        
+        var drawScene = function () {
+            var canvas = document.getElementById("canvas");
+            canvas.width = canvas.width;//clear
+            //ratNunes.skeleton.renderBones(canvas);
+            ratNunes.skeleton.renderImages(canvas);
+            melania.renderImages(canvas);
+            //donald.skeleton.renderBones(canvas);
+            donald.skeleton.renderImages(canvas);
+            rona.renderImages(canvas);
+                //var ctx = canvas.getContext("2d");
+                //ctx.drawImage(foreground, 0, 0, foreground.width, foreground.height,0,0,canvas.width, canvas.height);
+        }
 
 
         function render() {
             requestAnimationFrame(function () {
-                var canvas = document.getElementById("canvas");
-                canvas.width = canvas.width;//clear
-                //ratNunes.skeleton.renderBones(canvas);
-                ratNunes.skeleton.renderImages(canvas);
-                melania.renderImages(canvas);
-                //donald.skeleton.renderBones(canvas);
-                donald.skeleton.renderImages(canvas);
-                rona.renderImages(canvas);
-                //var ctx = canvas.getContext("2d");
-                //ctx.drawImage(foreground, 0, 0, foreground.width, foreground.height,0,0,canvas.width, canvas.height);
-                setTimeout(render, 50);
+                drawScene();
+                setTimeout(render, 5);
             });
         }
-        var intro = new Audio();
-        intro.src = "./sounds/hail_to_the_chief_short.mp3";
-        var goingaway = new SoundObject("./sounds/goingAway1.mp3");
-        var speak = function (isOpen) {
-            var cur = headImg.getSpriteIdx();
-            if (isOpen) {
-                headImg.setSpriteIdx(1, cur.col);
-            } else {
-                headImg.setSpriteIdx(0, cur.col);
-            }
-        }
-        goingaway.onVolUp = speak;
 
         function run() {
             var msg = document.getElementById("startMsg");
             if (msg) msg.style.display = "none";
+
+            //sounds
+            var intro = new Audio();
+            intro.src = "./sounds/hail_to_the_chief_short.mp3";
             intro.onended = function () {
                 //scene change?
                 console.log("Intro over");
             }
-            intro.play();
-            render();
-            donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * .7);
-            wait(2000).then(function () {
-                //lookaround();
-                donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * 1.4);
-            })
-            donald.pointFeetTo(DIR.LEFT);
+            var goingaway = new SoundObject("./sounds/goingAway1.mp3");
+            var speak = function (isOpen) {
+                var cur = headImg.getSpriteIdx();
+                if (isOpen) {
+                    headImg.setSpriteIdx(1, cur.col);
+                } else {
+                    headImg.setSpriteIdx(0, cur.col);
+                }
+            }
+            goingaway.onVolUp = speak;
+            var popNoise = new Audio();
+            popNoise.src = "./sounds/pop.mp3";
+            var whisle = new Audio();
+            whisle.src = "./sounds/Wolf_whistle.mp3";
+            var boom = new Audio();
+            boom.src = "./sounds/boom.mp3";
+
             //var walkFunc = donald.getWalkFunc(DIR.LEFT, 150);
             var dmove1 = function () {
                 if (donald.torso.joints[0].x < 600) {
@@ -239,7 +244,18 @@
                 }
             }());
 
-            animateUntil(dmove1).then(
+            wait(1000).then(
+                function () {
+                    intro.play();
+                    render();
+                    donald.pointFeetTo(DIR.LEFT);
+                    donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * .7);
+                    setTimeout(function () {
+                        donald.skeleton.rotateBoneTo(donald.rightArm, Math.PI * 1.4);
+                    }, 3000);
+                    return animateUntil(dmove1);
+                }
+            ).then(
                 function () {
                     return animateFor(donald.head.getGraphic().flipHoriz, 4, 1000);
                 }
@@ -271,6 +287,7 @@
                 }
             ).then(
                 function () {
+                    whisle.play();
                     donald.head.getGraphic().setSpriteIdx(0, 0);//smile
                     return wait(1000);
                 }
@@ -279,6 +296,7 @@
                     return animateUntil(function () {
                         melPopup(-1);
                         if (melBone.joints[0].y > 50) return false;
+                        melania.moveTo(-500, -500);
                         return true;
                     })
                 }
@@ -321,6 +339,7 @@
                                     ronaRock();
                                     return false;
                                 }
+                                popNoise.play();
                                 ronaGrow(1.5);
                                 return true;
                             }, 10);
@@ -358,6 +377,7 @@
                                     ronaRock();
                                     return false;
                                 }
+                                popNoise.play();
                                 ronaGrow(1.5);
                                 return true;
                             }, 10);
@@ -406,7 +426,6 @@
                                     ronaRock();
                                     return false;
                                 }
-                                ronaGrow(1.5);
                                 return true;
                             }, 10);
                         }
@@ -414,9 +433,85 @@
                 }
             ).then(
                 function () {
+                    document.getElementById("foreground").style.display = "none";
+                    boom.play();
                     return animateFor(function () {
-                        ronaGrow(1.5);
-                    }, 5, 50);
+                        ronaGrow(1.1);
+                        rona.move(-5, 0);
+                    }, 40, 5);
+                }
+            ).then(
+                function () {
+                    window.drawScene = function () { } //stop animation
+                    var scene = document.getElementById("scene");
+                    scene.style.backgroundImage = "";
+                    scene.style.backgroundColor = "white";
+                    //document.getElementById("canvas").style.display = "none";
+                    var canvas = document.getElementById("canvas");
+                    canvas.width = canvas.width;
+                    var foreground = document.getElementById("foreground");
+                    foreground.style.backgroundImage = "";
+                    foreground.style.backgroundColor = "transparent";
+                    foreground.style.display = "";
+                    foreground.style.transition = "background-color 1s linear";
+
+                    var map = new Image();
+                    map.className = "center";
+                    map.id = "mapus";
+                    var map2 = new Image();
+                    map2.src = "./imgs/covidMap.gif";
+                    map2.id = "map2";
+                    map2.className = "center";
+                    map2.style.display = "none";
+                    scene.insertBefore(map2, canvas);
+                    setTimeout(function () {
+                        scene.insertBefore(map, canvas);
+                        map.src = "./imgs/CovidSpread_srcJH.gif";
+                    }, 500);
+                    setTimeout(function () {
+                        map2.style.display = "";
+                        map.style.display = "none";
+                    }, 4000);
+                    return wait(1000);
+                }
+            ).then(
+                function () {
+                    var canvas = document.getElementById("canvas");
+                    canvas.width = canvas.width;
+                    var ctx = canvas.getContext("2d");
+                    var tombstones = [];
+                    for (var i = 0; i < 3; i++) {
+                        var t = new Image();
+                        t.src = "./imgs/tombstone" + (i + 1) + ".png";
+                        tombstones[i] = t;
+                    }
+                    var drawRandom = function () {
+                        var x = Math.random() * canvas.width;
+                        var y = Math.random() * canvas.height;
+                        var idx = Math.floor(Math.random() * 2.99);
+                        var stone = tombstones[idx];
+                        var scale = (Math.random() + 1) / 5;
+                        var w = stone.width * scale;
+                        var h = stone.height * scale;
+                        ctx.drawImage(stone, 0, 0, stone.width, stone.height, x, y, w, h);
+                    }
+                    setTimeout(drawRandom, 500);
+                    setTimeout(drawRandom, 1000);
+                    setTimeout(drawRandom, 1500);
+                    var peopleDying = function () {
+                        drawRandom();
+                        if (canvas.style.display != "none") {
+                            setTimeout(peopleDying, 20);
+                        }
+                    }
+                    setTimeout(peopleDying, 2000);
+                    return wait(6000);
+                }
+            ).then(
+                function () {
+                    document.getElementById("map2").style.display = "none";
+                    document.getElementById("canvas").style.display = "none";
+                    document.getElementById("foreground").style.backgroundColor = "black";
                 }
             )
         }
@@ -424,10 +519,10 @@
     </script>
 </head>
 <body>
-    <div style="height: 800px; width: 1400px; background-image:url(imgs/rosegarden3.png);background-size: cover; position:relative;">
+    <div id="scene" style="height: 800px; width: 1400px; background-image:url(imgs/rosegarden3.png);background-size: cover; position:relative;">
         <canvas id="canvas" height="800" width="1400" style="position: absolute; border:1px solid #d3d3d3; background-color:transparent; "></canvas>
-        <div style="height: 800px; width: 1400px; position:absolute; background-image:url(imgs/rosegarden_foreground.png);background-size: cover; background-color:transparent"></div>
-        <button id="startMsg" type="button" onclick="run()">CLICK HERE</button>
+        <div id="foreground" style="height: 100%; width: 100%; position:absolute; background-image:url(imgs/rosegarden_foreground.png);background-size: cover; background-color:transparent"></div>
+        <button id="startMsg" class="center" type="button" onclick="run()">CLICK HERE</button>
     </div>
 </body>
 </html>
